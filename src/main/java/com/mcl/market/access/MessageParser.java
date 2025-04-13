@@ -6,6 +6,6 @@ import quickfix.Message;
 public class MessageParser {
 
     public Message parse(String raw) throws InvalidMessage {
-        return new Message(raw);
+        return new Message(raw, true);
     }
 }

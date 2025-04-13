@@ -5,18 +5,17 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import quickfix.InvalidMessage;
-import quickfix.Message;
+import quickfix.*;
 
+import static com.mcl.market.access.Topic.EXECUTION_REPORT;
 import static com.mcl.market.access.Topic.NEW_ORDER;
 
 public class OrderRouter extends AbstractVerticle {
     public static final int SERVER_PORT = 9877;
-
     private static final Logger logger = LoggerFactory.getLogger(OrderRouter.class);
     private static final String PARSE_FAILURE_ERROR_MESSAGE = "Unable to parse input message";
-    private static final String COMP_ID = "ABC";
-    private static final String CLIENT_ID = "CLIENT1";
+    private static final String UNSUPPORTED_SYMBOL_ERROR_MESSAGE = "Unsupported symbol %s";
+    private static final String SUPPORTED_SYMBOL = "XYZ";
 
     private final MessageParser messageParser = new MessageParser();
     private final MessageGenerator messageGenerator = new MessageGenerator();
@@ -42,22 +41,29 @@ public class OrderRouter extends AbstractVerticle {
             String rawMessage = buffer.toString();
             try {
                 Message message = messageParser.parse(rawMessage);
-                // TODO add flow to validate symbol
-                getVertx().eventBus().publish(NEW_ORDER.getId(), message);
-            } catch (InvalidMessage e) {
+                String symbol = message.getString(55);
+                if (symbol.equals(SUPPORTED_SYMBOL)) {
+                    getVertx().eventBus().publish(NEW_ORDER.getId(), message);
+                } else {
+                    Message errorMessage = messageGenerator.createErrorMessage(String.format(UNSUPPORTED_SYMBOL_ERROR_MESSAGE, symbol));
+                    socket.write(serializeMessage(errorMessage));
+                }
+            } catch (InvalidMessage | FieldNotFound e) {
                 logger.error(PARSE_FAILURE_ERROR_MESSAGE, e);
-                Message errorMessage = messageGenerator.createErrorMessage(PARSE_FAILURE_ERROR_MESSAGE, COMP_ID, CLIENT_ID);
-                socket.write(errorMessage.toString());
+                Message errorMessage = messageGenerator.createErrorMessage(PARSE_FAILURE_ERROR_MESSAGE);
+                socket.write(serializeMessage(errorMessage));
             }
         });
 
-        getVertx().eventBus().consumer(Topic.EXECUTION_REPORT.getId(), message -> {
+        getVertx().eventBus().consumer(EXECUTION_REPORT.getId(), message -> {
            Message fixMessage = (Message) message.body();
-           socket.write(fixMessage.toString());
+           socket.write(serializeMessage(fixMessage));
         });
 
-        socket.closeHandler(_void -> {
-            logger.info("Client disconnected {}", socket.remoteAddress());
-        });
+        socket.closeHandler(_void -> logger.info("Client disconnected {}", socket.remoteAddress()));
+    }
+
+    private String serializeMessage(Message message) {
+        return message.toString();
     }
 }
