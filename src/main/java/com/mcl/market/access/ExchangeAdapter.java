@@ -12,7 +12,7 @@ public class ExchangeAdapter extends AbstractVerticle {
     @Override
     public void start() {
         getVertx().eventBus().consumer(NEW_ORDER.getId(), message -> {
-            // acts like a simulator, returns static execution report
+            // returns static execution report
             getVertx().eventBus().publish(EXECUTION_REPORT.getId(), generator.createExecutionReport());
         });
     }
