@@ -6,11 +6,13 @@ import io.vertx.core.net.NetSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import quickfix.*;
+import quickfix.field.Symbol;
 
 import static com.mcl.market.access.Topic.EXECUTION_REPORT;
 import static com.mcl.market.access.Topic.NEW_ORDER;
 
 public class OrderRouter extends AbstractVerticle {
+
     public static final int SERVER_PORT = 9877;
     private static final Logger logger = LoggerFactory.getLogger(OrderRouter.class);
     private static final String PARSE_FAILURE_ERROR_MESSAGE = "Unable to parse input message";
@@ -41,7 +43,7 @@ public class OrderRouter extends AbstractVerticle {
             String rawMessage = buffer.toString();
             try {
                 Message message = messageParser.parse(rawMessage);
-                String symbol = message.getString(55);
+                String symbol = message.getField(new Symbol()).getValue();
                 if (symbol.equals(SUPPORTED_SYMBOL)) {
                     getVertx().eventBus().publish(NEW_ORDER.getId(), message);
                 } else {

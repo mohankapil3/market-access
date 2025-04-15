@@ -3,50 +3,43 @@ package com.mcl.market.access;
 import quickfix.Message;
 import quickfix.field.*;
 
-import java.time.LocalDateTime;
-
+import static com.mcl.market.access.CommonConstants.*;
 import static quickfix.field.OrdStatus.FILLED;
 import static quickfix.field.Side.BUY;
 
 public class MessageGenerator {
-    private static final String FIX_BEGIN_STRING = "FIX.5.0";
-    private static final String COMP_ID = "TRADING";
-    private static final String CLIENT_ID = "USER1";
-    private static final LocalDateTime SENDING_TIME = LocalDateTime.parse("2025-04-12T15:30:00");
-    private static final int DUMMY_MSG_SEQUENCE_NUMBER = 1;
-    private static final int DUMMY_BODY_LENGTH = 55;
 
     public Message createErrorMessage(String error) {
         Message message = new Message();
-        message.getHeader().setField(new BeginString(FIX_BEGIN_STRING));
-        message.getHeader().setField(new BodyLength(DUMMY_BODY_LENGTH));
-        message.getHeader().setField(new MsgType(MsgType.REJECT));
-        message.getHeader().setField(new MsgSeqNum(DUMMY_MSG_SEQUENCE_NUMBER));
-        message.getHeader().setField(new SenderCompID(COMP_ID));
-        message.getHeader().setField(new TargetCompID(CLIENT_ID));
-        message.getHeader().setField(new SendingTime(SENDING_TIME));
+        Message.Header header = message.getHeader();
+        header.setField(new BeginString(FIX_BEGIN_STRING));
+        header.setField(new MsgType(MsgType.REJECT));
+        header.setField(new MsgSeqNum(MSG_SEQUENCE_NUMBER));
+        header.setField(new SenderCompID(COMP_ID));
+        header.setField(new TargetCompID(CLIENT_ID));
+        header.setField(new SendingTime(SENDING_TIME));
         message.setField(new Text(error));
         return message;
     }
 
     public Message createExecutionReport() {
         Message message = new Message();
-        message.getHeader().setField(new BeginString(FIX_BEGIN_STRING));
-        message.getHeader().setField(new BodyLength(DUMMY_BODY_LENGTH));
-        message.getHeader().setField(new MsgType(MsgType.EXECUTION_REPORT));
-        message.getHeader().setField(new MsgSeqNum(DUMMY_MSG_SEQUENCE_NUMBER));
-        message.getHeader().setField(new SenderCompID(COMP_ID));
-        message.getHeader().setField(new TargetCompID(CLIENT_ID));
-        message.getHeader().setField(new SendingTime(SENDING_TIME));
-        message.setField(new OrderID("ORD12345"));
-        message.setField(new ClOrdID("ORD1002"));
-        message.setField(new ExecID("EXEC001"));
+        Message.Header header = message.getHeader();
+        header.setField(new BeginString(FIX_BEGIN_STRING));
+        header.setField(new MsgType(MsgType.EXECUTION_REPORT));
+        header.setField(new MsgSeqNum(MSG_SEQUENCE_NUMBER));
+        header.setField(new SenderCompID(COMP_ID));
+        header.setField(new TargetCompID(CLIENT_ID));
+        header.setField(new SendingTime(SENDING_TIME));
+        message.setField(new OrderID(ORDER_ID));
+        message.setField(new ClOrdID(CLIENT_ORDER_ID));
+        message.setField(new ExecID(EXECUTION_ID));
         message.setField(new OrdStatus(FILLED));
-        message.setField(new Symbol("XYZ"));
+        message.setField(new Symbol(SYMBOL));
         message.setField(new Side(BUY));
-        message.setField(new OrderQty(100));
-        message.setField(new CumQty(0));
-        message.setField(new AvgPx(180.50));
+        message.setField(new OrderQty(ORDER_QUANTITY));
+        message.setField(new CumQty(CUMULATIVE_QUANTITY));
+        message.setField(new AvgPx(AVERAGE_PRICE));
         message.setField(new TransactTime(SENDING_TIME));
         return message;
     }
